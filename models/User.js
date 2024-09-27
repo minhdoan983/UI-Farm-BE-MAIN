@@ -6,13 +6,14 @@ const userSchema = Schema(
     {
         name: { type: String, require: true },
         email: { type: String, require: true, unique: true },
-        phone: { type: String, require: true },
+        phone: { type: String, require: false },
         password: { type: String, require: true, select: false },
+        avatarUrl:{type:String},
         role: {
             type: String,
             required: false,
             enum: ["admin", "customer"],
-            default :"customer"
+            default: "customer"
         },
     },
     {

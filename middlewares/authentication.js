@@ -6,6 +6,7 @@ const authMiddleware = {};
 authMiddleware.loginRequired = (req, res, next) => {
   try {
     const tokenString = req.headers.authorization;
+    console.log(tokenString)
     if (!tokenString)
       return next(new AppError(401, "Login required", "Validation Error"));
     const token = tokenString.replace("Bearer ", "");

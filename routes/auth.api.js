@@ -32,5 +32,8 @@ router.post(
  * @description Login with google
  * @access Public
  */
-
+router.post(
+  "/login/google",
+  authController.loginWithGoogle
+);
 module.exports = router;

@@ -24,4 +24,12 @@ router.post(
   userController.register
 );
 
+router.get(
+  "/me",
+  authMiddleware.loginRequired,
+  userController.getCurrentUser
+);
+
+router.put("/:id", authMiddleware.loginRequired, userController.updateProfile);
+
 module.exports = router;

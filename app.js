@@ -50,5 +50,16 @@ app.use((err, req, res, next) => {
         )
     }
 })
+
+// const Item = require('./models/Item');
+
+// async function checkColor() {
+//   // Find the material and populate the 'listItem' field with full Item documents
+//   const color = await Item.findOne({ _id: '66dde52e1746c3db269629f1' }).populate('material').populate('color').populate('gallery');
+
+//   console.log(color.material._id);
+// }
+
+// checkColor();
 module.exports = app;
 
