@@ -15,12 +15,9 @@ router.put(
     // loginRequired,
     cartController.addItemToCart
 );
+router.patch('/updateQuantity', cartController.updateCartQuantity);
 
-router.delete(
-    "/",
-    loginRequired,
-    cartController.removeItemFromCart
-);
+router.patch('/remove', cartController.removeItemFromCart);
 
 router.get(
     "/",

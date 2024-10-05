@@ -47,4 +47,18 @@ materialController.registerItems = catchAsync(async (req, res, next) => {
   );
 });
 
+materialController.getAllMaterial = catchAsync(async (req, res, next) => {
+
+  let materialList = await Material.find({});
+
+  return sendResponse(
+    res,
+    200,
+    true,
+    materialList,
+    null,
+    "Get All Material successful"
+  );
+});
+
 module.exports = materialController

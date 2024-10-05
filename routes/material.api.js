@@ -19,4 +19,9 @@ router.put(
   ]),
   materialController.registerItems
 );
+
+router.get(
+  "/",
+  materialController.getAllMaterial
+);
 module.exports = router;

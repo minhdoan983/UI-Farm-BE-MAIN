@@ -21,4 +21,6 @@ router.get(
   "/id/",
   galleryController.getItemByGalleryId
 );
+router.post("/:id/items", galleryController.addItemToGallery); // Thêm route này
+router.delete("/:id", galleryController.deleteGallery); 
 module.exports = router;

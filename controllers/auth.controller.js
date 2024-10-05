@@ -42,6 +42,7 @@ authController.loginWithGoogle = catchAsync(async (req, res, next) => {
       name,
       email,
       password,
+      phone:''
     });
   }
   const accessToken = await user.generateToken();

@@ -1,4 +1,4 @@
-const mongoose = require('mongoose')
+const mongoose = require("mongoose");
 
 const { AppError, catchAsync, sendResponse } = require("../helpers/utils");
 const Item = require("../models/Item");
@@ -7,7 +7,7 @@ const itemController = {};
 
 itemController.register = catchAsync(async (req, res, next) => {
   let { name, material, price, color, imgUrl } = req.body;
-
+  console.log({ name, material, price, color, imgUrl });
   let item = await Item.findOne({ name });
   if (item) throw new AppError(409, "Item already exists", "Register Error");
 
@@ -16,136 +16,82 @@ itemController.register = catchAsync(async (req, res, next) => {
     material,
     price,
     color,
-    imgUrl
+    imgUrl,
   });
 
-  return sendResponse(
-    res,
-    200,
-    true,
-    item,
-    null,
-    "Create item successful"
-  );
+  return sendResponse(res, 200, true, item, null, "Create item successful");
 });
 
 itemController.getItems = catchAsync(async (req, res, next) => {
-  let item = await Item.find({})
-  return sendResponse(
-    res,
-    200,
-    true,
-    item,
-    null,
-    "Get item successful"
-  )
-})
-
-itemController.getItemsByGallery = catchAsync(async (req, res, next) => {
-  // const galleryName = req.query.with_gallery
-  // const items =await Item.find({ gallery: galleryName })
-  //   .populate({
-  //     path:'gallery',
-  //     match: {name : galleryName}
-  //   })
-  //   .then(items => {
-  //     return items.filter(item => item.gallery && item.gallery.length > 0);
-  //   })
-  //   .catch(err => {
-  //     console.error(err);
-  //   });
-  // return sendResponse(
-  //   res,
-  //   200,
-  //   true,
-  //   items,
-  //   null,
-  //   "Get Gallery successful1"
-  // )
-})
-
-itemController.getItemsByColor = catchAsync(async (req, res, next) => {
-  const colorName = req.query.with_color
-  const items = await Item.find()
-    .populate({
-      path: 'color',
-      match: { name: colorName }
-    })
-    .then(items => {
-      return items.filter(item => item.color && item.color.length > 0);
-    })
-    .catch(err => {
-      console.error(err);
-    });
-  return sendResponse(
-    res,
-    200,
-    true,
-    items,
-    null,
-    "Get Item by Color successful1"
-  )
-})
-
-itemController.getItemsByPrice = catchAsync(async (req, res, next) => {
-  const minPrice = req.query.min_price
-  const maxPrice = req.query.max_price
-
-  const priceQuery = {
-    price: {
-      $gt: minPrice,
-      $lt: maxPrice
-    }
-  };
-
-  const items = await Item.find(priceQuery).sort({ price: 1 });
-
-  return sendResponse(
-    res,
-    200,
-    true,
-    items,
-    null,
-    "Get Items by Price successful"
-  );
-}
-);
+  var item = await Item.find({});
+  // let item = await Item.find({})
+  return sendResponse(res, 200, true, item, null, "Get item successful");
+});
 
 itemController.filterItems = catchAsync(async (req, res, next) => {
   const minPrice = req.query.min_price ? Number(req.query.min_price) : 0;
   const maxPrice = req.query.max_price ? Number(req.query.max_price) : Infinity;
   const colorName = req.query.with_color || null;
   const gallery = req.query.with_gallery || null;
-
-  console.log('Received filters:', minPrice, maxPrice, colorName, gallery);
-
   let filterItems;
+  let totalItems;
+  const PAGE_SIZE = 10;
+  const page = parseInt(req.query.page) || 1;
 
   if (gallery !== null) {
-    filterItems = await Gallery.find({ name: gallery })
-      .populate({
-        path: 'listItem',
+    const galleryData = await Gallery.findOne({ name: gallery }).populate(
+      "listItem"
+    );
+
+    if (galleryData) {
+      console.log(galleryData);
+      totalItems = galleryData.listItem.filter(
+        (item) =>
+          item.price >= minPrice &&
+          item.price <= maxPrice &&
+          (!colorName || item.color === colorName)
+      ).length;
+
+      filterItems = await Gallery.findOne({ name: gallery }).populate({
+        path: "listItem",
         match: {
           price: { $gte: minPrice, $lte: maxPrice },
-          ...(colorName ? { color: colorName } : {})  
-        }
+          ...(colorName ? { color: colorName } : {}),
+        },
+        options: {
+          skip: (page - 1) * PAGE_SIZE,
+          limit: PAGE_SIZE,
+        },
       });
+      filterItems = filterItems.listItem;
+    }
   } else {
+    totalItems = await Item.countDocuments({
+      price: { $gte: minPrice, $lte: maxPrice },
+      ...(colorName ? { color: colorName } : {}),
+    });
+
     filterItems = await Item.find({
       price: { $gte: minPrice, $lte: maxPrice },
-      ...(colorName ? { color: colorName } : {})  
-    });
+      ...(colorName ? { color: colorName } : {}),
+    })
+      .skip((page - 1) * PAGE_SIZE)
+      .limit(PAGE_SIZE);
   }
-  
-
-  console.log('Filtered items:', filterItems);
-  return sendResponse(res, 200, true, filterItems, null, "Filtered items retrieved");
+  return sendResponse(
+    res,
+    200,
+    true,
+    { items: filterItems, totalItems },
+    null,
+    "Filtered items retrieved"
+  );
 });
 
 itemController.getItemsById = catchAsync(async (req, res, next) => {
-  const ItemId = req.query.id
-  console.log(ItemId)
-  const items = await Item.findById(ItemId).populate('material')
+  const ItemId = req.query.id;
+  console.log(ItemId);
+  const items = await Item.findById(ItemId).populate("material");
 
   return sendResponse(
     res,
@@ -155,39 +101,47 @@ itemController.getItemsById = catchAsync(async (req, res, next) => {
     null,
     "Get Items by Price successful"
   );
-}
-);
+});
 itemController.getItemsBySearch = catchAsync(async (req, res, next) => {
-  const searchValue = req.query.with_search; 
+  const searchValue = req.query.with_search;
   console.log(searchValue);
 
   if (searchValue) {
     const items = await Item.aggregate([
       {
         $lookup: {
-          from: 'colors', 
-          localField: 'Color',
-          foreignField: '_id',
-          as: 'Color'
-        }
+          from: "colors",
+          localField: "color",
+          foreignField: "name",
+          as: "colorDetails",
+        },
       },
       {
         $lookup: {
-          from: 'materials', 
-          localField: 'material',
-          foreignField: '_id',
-          as: 'material'
-        }
+          from: "materials",
+          localField: "material",
+          foreignField: "_id",
+          as: "materialDetails",
+        },
+      },
+      {
+        $lookup: {
+          from: "galleries", 
+          localField: "_id",
+          foreignField: "listItem", 
+          as: "galleryDetails",
+        },
       },
       {
         $match: {
           $or: [
-            { name: { $regex: searchValue, $options: 'i' } }, 
-            { 'color.name': { $regex: searchValue, $options: 'i' } }, 
-            { 'material.name': { $regex: searchValue, $options: 'i' } } 
-          ]
-        }
-      }
+            { name: { $regex: searchValue, $options: "i" } }, 
+            { color: { $regex: searchValue, $options: "i" } }, 
+            { "materialDetails.name": { $regex: searchValue, $options: "i" } }, 
+            { "galleryDetails.name": { $regex: searchValue, $options: "i" } }, 
+          ],
+        },
+      },
     ]);
 
     return sendResponse(
@@ -203,5 +157,45 @@ itemController.getItemsBySearch = catchAsync(async (req, res, next) => {
   }
 });
 
+itemController.updateItem = catchAsync(async (req, res, next) => {
+  const { id } = req.params; 
+  const { name, material, price, color, imgUrl } = req.body; 
 
-module.exports = itemController
+  const updatedItem = await Item.findByIdAndUpdate(
+    id,
+    {
+      name,
+      material,
+      price,
+      color,
+      imgUrl,
+    },
+    { new: true } 
+  );
+
+  if (!updatedItem) {
+    throw new AppError(404, "Item not found", "Update Error");
+  }
+
+  return sendResponse(
+    res,
+    200,
+    true,
+    updatedItem,
+    null,
+    "Update item successful"
+  );
+});
+itemController.deleteItem = catchAsync(async (req, res, next) => {
+  const { id } = req.params; 
+
+  const deletedItem = await Item.findByIdAndDelete(id);
+
+  if (!deletedItem) {
+    throw new AppError(404, "Item not found", "Delete Error");
+  }
+
+  return sendResponse(res, 200, true, null, null, "Delete item successful");
+});
+
+module.exports = itemController;

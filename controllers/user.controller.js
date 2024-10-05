@@ -53,6 +53,7 @@ userController.updateProfile = catchAsync(async (req, res, next) => {
   const allows = [
     "name",
     "avatarUrl",
+    "phone"
   ];
   allows.forEach((field) => {
     if (req.body[field] !== undefined) {
