@@ -33,7 +33,7 @@ authController.loginWithGoogle = catchAsync(async (req, res, next) => {
   const decodedToken = jwt.decode(credentialResponse.credential);
   console.log(decodedToken)
   let { email, name, sub: googleId } = decodedToken;
-  const user = await User.findOne({ email });
+  let user = await User.findOne({ email });
   if (!user) {
     let password
     const salt = await bcrypt.genSalt(10);
