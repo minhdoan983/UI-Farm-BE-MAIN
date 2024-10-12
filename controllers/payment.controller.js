@@ -137,5 +137,35 @@ paymentController.getPayment = catchAsync(async (req, res, next) => {
     );
 });
 
+paymentController.getPaymentByUser = catchAsync(async (req, res, next) => {
+    const { userId } = req.params;
+
+    const payments = await Payment.find()
+        .populate({
+            path: 'cartId',
+            populate: {
+                path: 'cartItems',
+                populate: {
+                    path: 'itemId'
+                }
+            }
+        });
+
+    const filteredPayments = payments.filter(payment => payment.cartId && payment.cartId.user.toString() === userId);
+
+    if (!filteredPayments.length) {
+        return sendResponse(res, 200, true, null, "No payments found for this user");
+    }
+
+    return sendResponse(
+        res,
+        200,
+        true,
+        filteredPayments,
+        null,
+        "Get Payment by User successful"
+    );
+});
+
 
 module.exports = paymentController

@@ -18,5 +18,6 @@ router.get(
     "/",
     paymentController.getPayment
 );
+router.get('/user/:userId', paymentController.getPaymentByUser);
 
 module.exports = router;
